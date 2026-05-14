@@ -17,7 +17,6 @@ st.title("Elite Card Counter")
 col_power, col_undo, col_reset = st.columns(3)
 with col_power:
     is_power = st.toggle("Power BJ", value=(app_model.game_mode == 'power'))
-    # Se o usuário mudar o switch, reseta o baralho no novo modo
     if is_power and app_model.game_mode == 'standard':
         app_model.reset_shoe('power')
         st.rerun()
@@ -35,7 +34,7 @@ with col_reset:
         app_model.reset_shoe('power' if is_power else 'standard')
         st.rerun()
 
-# 4. Painel Principal de Estatísticas (Os 3 Blocos)
+# 4. Painel Principal de Estatísticas
 st.markdown("---")
 tc_val = app_model.true_count
 tc_color = "normal" if -1 < tc_val < 2 else ("inverse" if tc_val >= 2 else "off")
@@ -62,32 +61,47 @@ with tab_simple:
         app_model.process_simple(-1)
         st.rerun()
 
-# ABA 2: Complex Mode (Matriz de Cartas)
+# ==========================================
+# ABA 2: NOVO COMPLEX MODE (OTIMIZADO PARA MOBILE)
+# ==========================================
 with tab_complex:
-    naipes = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-    simbolos = {'Hearts': '♥', 'Diamonds': '♦', 'Clubs': '♣', 'Spades': '♠'}
+    st.markdown("<p style='text-align: center; color: #888; font-size: 14px;'>1. Selecione o Naipe</p>", unsafe_allow_html=True)
     
-    for val in reversed(app_model.VALORES_STANDARD):
-        cols = st.columns(4)
-        for i, naipe in enumerate(naipes):
-            is_disabled = (is_power and val in ['9', '10'])
-            if cols[i].button(f"{val}{simbolos[naipe]}", key=f"{val}_{naipe}", disabled=is_disabled, use_container_width=True):
-                app_model.process_card(val, naipe)
-                st.rerun()
+    # Seletor Horizontal de Naipes
+    simbolos_map = {'Hearts': '♥', 'Diamonds': '♦', 'Clubs': '♣', 'Spades': '♠'}
+    naipe_selecionado = st.radio(
+        "Naipe", 
+        ['Hearts', 'Diamonds', 'Clubs', 'Spades'], 
+        horizontal=True, 
+        label_visibility="collapsed",
+        format_func=lambda x: f"{simbolos_map[x]} {x}"
+    )
+    
+    st.markdown("<p style='text-align: center; color: #888; font-size: 14px;'>2. Toque na Carta</p>", unsafe_allow_html=True)
+    
+    simbolo_atual = simbolos_map[naipe_selecionado]
+    
+    # Grid dinâmico de 13 botões (muda dependendo do naipe escolhido)
+    cols = st.columns(4)
+    for i, val in enumerate(app_model.VALORES_STANDARD):
+        is_disabled = (is_power and val in ['9', '10'])
+        
+        # O botão exibe a carta + o naipe selecionado atualmente
+        if cols[i % 4].button(f"{val} {simbolo_atual}", key=f"btn_{val}", disabled=is_disabled, use_container_width=True):
+            app_model.process_card(val, naipe_selecionado)
+            st.rerun()
 
 # ABA 3: Side Bets e Composição
 with tab_stats:
     val_counts, suit_counts, suit_percs = app_model.get_stats()
     
-    # Tabela de Naipes
     st.subheader("Flush 21+3 (Suit Concentration)")
     df_suits = pd.DataFrame([
-        {"Suit": f"{simbolos[s]} {s}", "Left": count, "%": f"{suit_percs[s]:.1f}%"}
+        {"Suit": f"{simbolos_map[s]} {s}", "Left": count, "%": f"{suit_percs[s]:.1f}%"}
         for s, count in suit_counts.items()
     ])
     st.dataframe(df_suits, use_container_width=True, hide_index=True)
     
-    # Dica Visual de EV
     for s, p in suit_percs.items():
         if p >= 29.5:
             st.success(f"🔥 Aposta Paralela de Flush recomendada para {s} ({p:.1f}%)")
