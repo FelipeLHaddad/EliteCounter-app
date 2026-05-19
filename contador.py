@@ -51,18 +51,23 @@ tab_simple, tab_complex, tab_stats = st.tabs(["⚡ Simple Mode", "🎴 Complex",
 # ABA 1: Simple Mode (Botões Gigantes)
 with tab_simple:
     c1, c2, c3 = st.columns(3)
-    if c1.button("➕ +1\n(2-6)", use_container_width=True):
+    
+    # Textos dinâmicos: Se Power BJ estiver ligado, removemos o 9 e o 10 da tela!
+    texto_zero = "0\n(7 e 8)" if is_power else "0\n(7 a 9)"
+    texto_menos = "➖ -1\n(J, Q, K, A)" if is_power else "➖ -1\n(10 a A)"
+    
+    if c1.button("➕ +1\n(2 a 6)", use_container_width=True):
         app_model.process_simple(1)
         st.rerun()
-    if c2.button("0\n(7-9)", use_container_width=True):
+    if c2.button(texto_zero, use_container_width=True):
         app_model.process_simple(0)
         st.rerun()
-    if c3.button("➖ -1\n(10-A)", use_container_width=True):
+    if c3.button(texto_menos, use_container_width=True):
         app_model.process_simple(-1)
         st.rerun()
 
 # ==========================================
-# ABA 2: NOVO COMPLEX MODE (OTIMIZADO PARA MOBILE)
+# ABA 2: COMPLEX MODE (OTIMIZADO PARA MOBILE)
 # ==========================================
 with tab_complex:
     st.markdown("<p style='text-align: center; color: #888; font-size: 14px;'>1. Selecione o Naipe</p>", unsafe_allow_html=True)
